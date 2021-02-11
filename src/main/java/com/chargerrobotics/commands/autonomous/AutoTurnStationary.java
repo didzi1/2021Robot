@@ -8,13 +8,12 @@
   /**
    * Creates a new AutoTurnStationary.
    * 
-   * Turns the robot in place (not moving forwards or backwards).  Might want to 
-   * wire in the gyro here to help with precision on the turning to a specific angle.
+   * Turns the robot in place (not moving forwards or backwards). 
    * 
    * Goal is to turn and be able to move in a direction using the gyro and ticks from the encoders
    * get position from gyro and odometry (located in DifferentialDriveOdometry.class) 
    * +- target from current heading 
-   * likely will have to use PID for arriving to location 
+   * likely will have to use PID for arriving to location                                   
    * 
    */
 
@@ -28,10 +27,8 @@ import org.slf4j.LoggerFactory;
 import edu.wpi.first.wpilibj.controller.PIDController;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.CommandBase;
 
 
 public class AutoTurnStationary extends CommandBase {
@@ -39,7 +36,6 @@ public class AutoTurnStationary extends CommandBase {
 
   private double currentHeading;
   private double initialHeading;
-  private double desiredDistance;
 
   private final DriveSubsystem drive; // look at gyroscopeseial thing for why its not working
   private final GyroscopeSerial gyro; //Will use gyro to check location and angle
@@ -57,6 +53,7 @@ public class AutoTurnStationary extends CommandBase {
     // Use addRequirements() here to declare subsystem dependencies.
     this.drive = drive;
     this.gyro = gyro;
+    
     SmartDashboard.putNumber("StationaryRotation", 0.0); //creates a string
     SmartDashboard.putNumber("linRotP", linRotP);
     SmartDashboard.putNumber("linRotI", linRotI); 
@@ -74,7 +71,6 @@ public class AutoTurnStationary extends CommandBase {
 
     initialHeading = gyro.getHeading();
     currentHeading = initialHeading;
-    desiredDistance = (0.0);  // dont want it to move, so 0.0  
     drive.setAutonomousRunning(true);
     drive.setThrottle(0, 0); // Clear out any current speed/throttle on the drive....
     
@@ -84,15 +80,15 @@ public class AutoTurnStationary extends CommandBase {
     rotationPid.setTolerance(SmartDashboard.getNumber("linRotTol", 1.0));
     rotationPid.setSetpoint(SmartDashboard.getNumber("StationaryRotation", 0.0));
     odometry = new DifferentialDriveOdometry(getGyroHeading(), new Pose2d(0.0, 0.0, new Rotation2d(0.0)));
-;
 
    }
+   
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     currentHeading = gyro.getHeading();
-    Pose2d pose = odometry.update(getGyroHeading(), getDistanceLeft(), getDistanceRight()); // get distances right and left + getgyroheading
+    Pose2d pose = odometry.update(getGyroHeading(), 0, 0); // getDistanceLeft = 0, getDistanceRight = 0
     Rotation2d rotation = pose.getRotation();
     double rotationOutput = rotationPid.calculate(rotation.getDegrees());
     drive.arcadeDrive(0, rotationOutput);
@@ -111,4 +107,10 @@ public class AutoTurnStationary extends CommandBase {
   public boolean isFinished() {
     return rotationPid.atSetpoint();
   }
+
+
+  private Rotation2d getGyroHeading() {
+    return Rotation2d.fromDegrees(currentHeading - initialHeading);
+  }
 }
+
